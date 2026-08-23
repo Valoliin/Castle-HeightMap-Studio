@@ -53,5 +53,8 @@ ARCH=x86_64 "$APPIMAGETOOL" --appimage-extract-and-run \
     AppDir \
     dist/CastleHeightMapStudio-x86_64.AppImage
 
+echo "Self-test de l'AppImage..."
+APPIMAGE_EXTRACT_AND_RUN=1 dist/CastleHeightMapStudio-x86_64.AppImage --self-test
+
 echo
 echo "AppImage créée : dist/CastleHeightMapStudio-x86_64.AppImage"

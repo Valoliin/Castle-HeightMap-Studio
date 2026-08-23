@@ -55,10 +55,10 @@ import numpy as np
 from PIL import Image, ImageEnhance, ImageFilter, ImageOps, ImageTk
 
 
-APP_TITLE = "Castle HeightMap Studio v4.3"
+APP_TITLE = "Castle HeightMap Studio v4.3.1"
 
 APP_NAME = "Castle HeightMap Studio"
-APP_VERSION = "4.3"
+APP_VERSION = "4.3.1"
 APP_AUTHOR = "Valentin Bonali"
 
 
@@ -142,33 +142,96 @@ MIN_LAYER_SIZE = 0.02  # fraction de la dimension du mur
 LOG_FILENAME = "castle_heightmap.log"
 
 
+def user_state_dir() -> Path:
+    """
+    Dossier persistant et INSCRIPTIBLE pour les logs de l'application.
+
+    Important pour les versions packagées :
+    - AppImage est monté en lecture seule sous /tmp/.mount_... ;
+    - PyInstaller onefile Windows est extrait dans un dossier temporaire ;
+    il ne faut donc jamais écrire à côté de __file__.
+    """
+    system = platform.system().lower()
+
+    if system == "windows":
+        base = os.environ.get("LOCALAPPDATA")
+        if base:
+            return Path(base) / "CastleHeightMapStudio"
+        return Path.home() / "AppData" / "Local" / "CastleHeightMapStudio"
+
+    if system == "darwin":
+        return Path.home() / "Library" / "Logs" / "CastleHeightMapStudio"
+
+    # Linux / BSD : XDG si disponible, sinon ~/.local/state
+    xdg_state = os.environ.get("XDG_STATE_HOME")
+    if xdg_state:
+        return Path(xdg_state) / "CastleHeightMapStudio"
+
+    return Path.home() / ".local" / "state" / "CastleHeightMapStudio"
+
+
+def resolve_log_path() -> Path:
+    """
+    Retourne un chemin de log inscriptible.
+    Ne doit JAMAIS empêcher le programme de démarrer.
+    """
+    candidates = [
+        user_state_dir() / LOG_FILENAME,
+        Path.home() / ".castle_heightmap_studio" / LOG_FILENAME,
+        Path(os.environ.get("TMPDIR") or os.environ.get("TEMP") or "/tmp")
+        / "castle_heightmap_studio"
+        / LOG_FILENAME,
+    ]
+
+    for path in candidates:
+        try:
+            path.parent.mkdir(parents=True, exist_ok=True)
+            # Vérification réelle de l'écriture, pas seulement des permissions.
+            with open(path, "a", encoding="utf-8"):
+                pass
+            return path
+        except Exception:
+            continue
+
+    # Cas extrêmement dégradé : le FileHandler sera désactivé.
+    return candidates[-1]
+
+
 class AppLogger:
     """
     Logger double sortie :
-    - fichier castle_heightmap.log dans le dossier du programme ;
+    - fichier castle_heightmap.log dans le dossier utilisateur inscriptible ;
     - callback optionnel vers l'interface graphique.
     """
     def __init__(self):
         self.ui_callback = None
-        self.log_path = Path(__file__).resolve().parent / LOG_FILENAME
+        self.log_path = resolve_log_path()
 
         self.logger = logging.getLogger("CastleHeightMapStudio")
         self.logger.setLevel(logging.DEBUG)
         self.logger.propagate = False
 
         if not self.logger.handlers:
-            handler = logging.FileHandler(
-                self.log_path,
-                encoding="utf-8",
+            formatter = logging.Formatter(
+                "%(asctime)s.%(msecs)03d | %(levelname)-7s | %(message)s",
+                datefmt="%Y-%m-%d %H:%M:%S",
             )
-            handler.setLevel(logging.DEBUG)
-            handler.setFormatter(
-                logging.Formatter(
-                    "%(asctime)s.%(msecs)03d | %(levelname)-7s | %(message)s",
-                    datefmt="%Y-%m-%d %H:%M:%S",
+
+            # Le fichier log est utile, mais ne doit jamais être une raison
+            # de faire planter l'application.
+            try:
+                handler = logging.FileHandler(
+                    self.log_path,
+                    encoding="utf-8",
                 )
-            )
-            self.logger.addHandler(handler)
+                handler.setLevel(logging.DEBUG)
+                handler.setFormatter(formatter)
+                self.logger.addHandler(handler)
+            except Exception:
+                fallback = logging.StreamHandler(sys.stderr)
+                fallback.setLevel(logging.DEBUG)
+                fallback.setFormatter(formatter)
+                self.logger.addHandler(fallback)
 
     def set_ui_callback(self, callback):
         self.ui_callback = callback
@@ -3166,7 +3229,64 @@ Les licences de ces composants restent celles de leurs projets respectifs.
     def _step_error(self,exc,tb):
         self.step_button.config(state="normal");self.progress["value"]=0;self.status.set("Échec génération.");APP_LOG.error(str(exc));APP_LOG.logger.error(tb);messagebox.showerror(APP_TITLE,f"{exc}\n\nVoir l'onglet Logs.")
 
+def run_self_test() -> int:
+    """
+    Test non graphique utilisé par GitHub Actions sur le vrai binaire final.
+    Il vérifie les points qui nous ont déjà posé problème :
+    - log inscriptible ;
+    - ressources embarquées ;
+    - Pillow / NumPy ;
+    - CadQuery / OpenCascade importables.
+    """
+    checks = []
+
+    try:
+        APP_LOG.info("SELF-TEST: démarrage")
+        checks.append(("log", APP_LOG.log_path.exists(), str(APP_LOG.log_path)))
+    except Exception as exc:
+        checks.append(("log", False, repr(exc)))
+
+    for rel in [
+        "assets/castle_heightmap_studio.png",
+        "docs/CHANGELOG.md",
+        "docs/wiki_index.json",
+    ]:
+        p = resource_path(rel)
+        checks.append((rel, p.exists(), str(p)))
+
+    try:
+        import cadquery as cq
+        # Faire une vraie petite opération OCC, pas seulement un import.
+        solid = cq.Workplane("XY").box(2, 2, 2).val()
+        checks.append(("cadquery/OCC", bool(solid.isValid()), "box 2x2x2"))
+    except Exception as exc:
+        checks.append(("cadquery/OCC", False, repr(exc)))
+
+    try:
+        test = np.zeros((4, 4), dtype=np.uint8)
+        im = Image.fromarray(test, "L")
+        checks.append(("numpy/pillow", im.size == (4, 4), str(im.size)))
+    except Exception as exc:
+        checks.append(("numpy/pillow", False, repr(exc)))
+
+    failed = False
+    print(f"{APP_NAME} {APP_VERSION} — self-test")
+    print(f"Platform: {platform.system()} {platform.machine()}")
+    for name, ok, detail in checks:
+        print(f"[{'OK' if ok else 'FAIL'}] {name}: {detail}")
+        failed = failed or not ok
+
+    return 1 if failed else 0
+
+
 def main():
+    if "--self-test" in sys.argv:
+        raise SystemExit(run_self_test())
+
+    if "--version" in sys.argv:
+        print(f"{APP_NAME} {APP_VERSION}")
+        return
+
     App().mainloop()
 
 

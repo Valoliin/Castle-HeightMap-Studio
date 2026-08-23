@@ -39,6 +39,14 @@ jobs:
         shell: pwsh
         run: Move-Item dist/CastleHeightMapStudio.exe dist/CastleHeightMapStudio-Windows-x86_64.exe
 
+      - name: Self-test Windows EXE
+        shell: pwsh
+        run: |
+          & "dist/CastleHeightMapStudio-Windows-x86_64.exe" --self-test
+          if ($LASTEXITCODE -ne 0) {
+            throw "Castle HeightMap Studio Windows self-test failed with exit code $LASTEXITCODE"
+          }
+
       - uses: actions/upload-artifact@v4
         with:
           name: windows
@@ -108,6 +116,11 @@ jobs:
           ARCH=x86_64 ./appimagetool --appimage-extract-and-run \
             AppDir \
             CastleHeightMapStudio-Linux-x86_64.AppImage
+
+      - name: Self-test Linux AppImage
+        run: |
+          chmod +x CastleHeightMapStudio-Linux-x86_64.AppImage
+          APPIMAGE_EXTRACT_AND_RUN=1 ./CastleHeightMapStudio-Linux-x86_64.AppImage --self-test
 
       - uses: actions/upload-artifact@v4
         with:

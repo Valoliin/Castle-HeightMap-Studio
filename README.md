@@ -1,4 +1,4 @@
-# Castle HeightMap Studio v4.3
+# Castle HeightMap Studio v4.3.1
 
 **Auteur : Valentin Bonali**
 
@@ -154,3 +154,19 @@ L'option **Ajouter Base_reference dans le même STEP** conserve les deux solides
 - `Base_reference`
 
 Dans FreeCAD, `Cut(Mur_complet, Base_reference)` donne le relief seul sans recalage manuel.
+
+
+## Logs
+
+Les builds packagés n'écrivent jamais dans leur propre dossier.
+
+- Linux : `~/.local/state/CastleHeightMapStudio/castle_heightmap.log`
+- Windows : `%LOCALAPPDATA%\CastleHeightMapStudio\castle_heightmap.log`
+
+## Self-test des builds
+
+```bash
+CastleHeightMapStudio --self-test
+```
+
+GitHub Actions exécute ce test sur les artefacts finaux avant de les publier.

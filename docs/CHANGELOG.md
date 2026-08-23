@@ -1,5 +1,18 @@
 # Changelog — Castle HeightMap Studio
 
+## 4.3.1
+- Correction du démarrage de l'AppImage sur système de fichiers en lecture seule.
+- Les logs ne sont plus écrits à côté de l'exécutable.
+- Linux : logs dans `~/.local/state/CastleHeightMapStudio/`.
+- Windows : logs dans `%LOCALAPPDATA%/CastleHeightMapStudio/`.
+- Ajout de chemins de secours si le dossier utilisateur principal n'est pas inscriptible.
+- Une erreur de création du fichier log ne peut plus empêcher le logiciel de démarrer.
+- Ajout de `--self-test` pour tester le vrai binaire packagé sans ouvrir l'interface.
+- GitHub Actions teste désormais l'EXE Windows et l'AppImage Linux avant publication.
+- Correction de l'arborescence interne AppImage.
+- Correction du job de publication GitHub Release avec `GH_REPO`.
+
+
 ## 4.3
 - Ajout d'un véritable rendu Markdown dans les fenêtres d'aide.
 - Les titres, listes, gras, italique, code et liens sont maintenant affichés correctement.
