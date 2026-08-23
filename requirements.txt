@@ -1,0 +1,4 @@
+cadquery>=2.5,<3
+Pillow>=10
+numpy>=1.26
+matplotlib>=3.8

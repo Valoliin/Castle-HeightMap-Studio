@@ -1,0 +1,5 @@
+{
+  "github_repo": "",
+  "release_asset_windows_suffix": ".exe",
+  "release_asset_linux_suffix": ".AppImage"
+}

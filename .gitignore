@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+build/
+dist/
+AppDir/
+castle_heightmap.log
+build_tools/appimagetool-x86_64.AppImage
+*.castlehm

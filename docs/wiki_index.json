@@ -1,0 +1,50 @@
+[
+  {
+    "title": "Accueil",
+    "file": "01_accueil.md"
+  },
+  {
+    "title": "Textures et calques",
+    "file": "02_textures_calques.md"
+  },
+  {
+    "title": "Raccords",
+    "file": "03_raccords.md"
+  },
+  {
+    "title": "Height-map",
+    "file": "04_heightmap.md"
+  },
+  {
+    "title": "Masques",
+    "file": "05_masques.md"
+  },
+  {
+    "title": "Aperçu 3D",
+    "file": "06_apercu_3d.md"
+  },
+  {
+    "title": "Export STEP / FreeCAD",
+    "file": "07_export_step.md"
+  },
+  {
+    "title": "Résolution / performances",
+    "file": "08_resolution.md"
+  },
+  {
+    "title": "Projets et raccourcis",
+    "file": "09_projets.md"
+  },
+  {
+    "title": "Mises à jour",
+    "file": "10_mises_a_jour.md"
+  },
+  {
+    "title": "Diagnostic / logs",
+    "file": "11_diagnostic.md"
+  },
+  {
+    "title": "Impression bicolore",
+    "file": "12_impression_bicolore.md"
+  }
+]

@@ -1,0 +1,99 @@
+# Changelog — Castle HeightMap Studio
+
+## 4.3
+- Ajout d'un véritable rendu Markdown dans les fenêtres d'aide.
+- Les titres, listes, gras, italique, code et liens sont maintenant affichés correctement.
+- Remplacement de l'onglet Aide monolithique par un **mini-wiki intégré**.
+- Navigation par sommaire.
+- Recherche instantanée dans les pages du wiki.
+- Boutons précédent/suivant.
+- Le changelog bénéficie lui aussi du rendu Markdown.
+- Les liens HTTP/HTTPS deviennent cliquables.
+- L'aide est maintenant découpée en pages thématiques dans `docs/wiki/`.
+
+
+## 4.2
+- Interface plus proche d'un logiciel de bureau classique.
+- Menu **Fichier** : Nouveau, Ouvrir, Enregistrer, Enregistrer sous, export PNG, export STEP et Quitter.
+- Menu **Édition** : Annuler/Rétablir, ajout et duplication de texture.
+- Menu **Aide** : Aide, Changelog, recherche de mise à jour et À propos.
+- Nouvelle fenêtre **À propos** inspirée des logiciels CAO : version, auteur, système, Python et bibliothèques.
+- Auteur affiché : **Valentin Bonali**.
+- Aide et changelog consultables directement dans l'application.
+- Vérification des nouvelles versions via **GitHub Releases**.
+- Téléchargement assisté de la bonne release (`.exe`, `.AppImage` ou ZIP) quand elle existe.
+- Détection automatique du dépôt GitHub depuis `update_config.json`, `GITHUB_REPOSITORY` ou `.git/config`.
+- Ajout d'une icône d'application.
+- Ajout d'un système de build GitHub Actions pour Windows et Linux.
+- Build Windows `.exe` via PyInstaller.
+- Build Linux `.AppImage` via PyInstaller + AppImageKit.
+- L'image `smoke_test_heightmap.png` est de nouveau fournie dans l'archive.
+- Ajout d'un dossier `examples/`.
+
+## 4.1
+- Réécriture de la résolution adaptative pour supprimer les grandes oscillations B-Spline.
+- Aucune suppression de lignes Y en mode adaptatif sécurisé.
+- Ancres X régulières et renforcement autour des transitions fond/relief.
+- Contrôle anti-overshoot des splines.
+- Redensification automatique lorsqu'une spline devient dangereuse.
+- Repli possible sur le profil complet.
+
+## 4.0
+- Sauvegarde et ouverture des projets `.castlehm`.
+- Historique Annuler/Rétablir.
+- Panneau de calques avec visibilité, verrouillage, ordre et renommage.
+- Position et dimensions des calques en millimètres.
+- Rotation et verrouillage du ratio.
+- Aimantation à une grille paramétrable.
+- Masques de relief : pinceau, rectangle et cercle/ellipse.
+- Presets de conversion : Neutre, Pierre douce, Pierre marquée et Gravure.
+- Aperçu 3D intégré.
+- Résolution STEP adaptative.
+- Analyse estimative avant export.
+- Export STEP multi-corps optionnel avec `Mur_complet` + `Base_reference` dans le même repère pour FreeCAD.
+
+## 3.2
+- Journal de diagnostic dans l'interface.
+- Fichier `castle_heightmap.log`.
+- Chronométrage détaillé de chaque section, spline, wire, loft, validation et export.
+- Avertissement sur les splines anormalement lentes.
+
+## 3.1
+- Correction du raccord automatique : utilisation de la height-map réellement traitée après HSV/niveaux/gamma.
+- Alignement davantage basé sur les contours des joints.
+- Ajout de `+ Raccordé` par miroir horizontal/vertical pour créer une jonction de bord continue.
+
+## 3.0
+- Passage à un véritable éditeur multi-calques.
+- 8 poignées de redimensionnement façon traitement de texte.
+- Étirement X/Y libre.
+- Duplication, suppression et changement d'ordre des textures.
+- Chevauchement avec raccord doux.
+- Premier algorithme de raccord automatique.
+- Zones sans texture = relief nul.
+
+## 2.2
+- Correction du STEP « mille-feuille ».
+- Loft lissé / surface continue par défaut.
+- Ancien mode en bandes conservé comme secours.
+
+## 2.1
+- Dézoom sous 100 %, jusqu'à 5 %.
+- Zones hors image converties en noir / relief nul.
+- Possibilité de conserver des bandes parfaitement lisses autour d'une texture.
+
+## 2.0
+- Interface graphique complète.
+- Image source + rectangle de cadrage au ratio du mur.
+- Zoom et déplacement de l'image.
+- Réglages HSV.
+- Contraste, niveaux noir/blanc, gamma et lissage.
+- Prévisualisation de la height-map.
+- Aperçu 3D.
+- Export PNG et STEP.
+
+## 1.0
+- Première version du convertisseur image → height-map → STEP.
+- Dimensions physiques du mur en millimètres.
+- Épaisseur de fond, relief maximal et pas d'échantillonnage.
+- Génération d'un vrai solide STEP via CadQuery/OpenCascade.

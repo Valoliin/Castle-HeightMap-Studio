@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Application
+Name=Castle HeightMap Studio
+Comment=Image/height-map to STEP editor for FreeCAD
+Exec=CastleHeightMapStudio
+Icon=castle-heightmap-studio
+Categories=Graphics;3DGraphics;Engineering;
+Terminal=false

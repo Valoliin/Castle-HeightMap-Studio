@@ -1,0 +1,163 @@
+name: Build and release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Configure updater repository
+        shell: pwsh
+        run: |
+          $cfg = Get-Content update_config.json | ConvertFrom-Json
+          $cfg.github_repo = "${{ github.repository }}"
+          $cfg | ConvertTo-Json -Depth 5 | Set-Content -Encoding UTF8 update_config.json
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install pyinstaller
+
+      - name: Build EXE
+        run: python build_tools/build_pyinstaller.py
+
+      - name: Rename EXE
+        shell: pwsh
+        run: Move-Item dist/CastleHeightMapStudio.exe dist/CastleHeightMapStudio-Windows-x86_64.exe
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows
+          path: dist/CastleHeightMapStudio-Windows-x86_64.exe
+
+  linux:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Configure updater repository
+        run: |
+          python - <<'PY'
+          import json
+          p = "update_config.json"
+          d = json.load(open(p, encoding="utf-8"))
+          d["github_repo"] = "${{ github.repository }}"
+          json.dump(d, open(p, "w", encoding="utf-8"), indent=2)
+          PY
+
+      - name: System dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y python3-tk curl libgl1
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -r requirements.txt
+          python -m pip install pyinstaller
+
+      - name: Build PyInstaller folder
+        run: |
+          python -m PyInstaller \
+            castle_heightmap_studio.py \
+            --name CastleHeightMapStudio \
+            --windowed \
+            --clean \
+            --noconfirm \
+            --collect-all cadquery \
+            --collect-all OCP \
+            --collect-all matplotlib \
+            --add-data "docs:docs" \
+            --add-data "assets:assets" \
+            --add-data "examples:examples" \
+            --add-data "update_config.json:."
+
+      - name: Create AppDir
+        run: |
+          mkdir -p AppDir/usr/bin
+          cp -a dist/CastleHeightMapStudio AppDir/usr/bin/CastleHeightMapStudio
+          cp packaging/linux/AppRun AppDir/AppRun
+          cp packaging/linux/castle-heightmap-studio.desktop AppDir/castle-heightmap-studio.desktop
+          cp assets/castle_heightmap_studio.png AppDir/castle-heightmap-studio.png
+          chmod +x AppDir/AppRun
+
+      - name: Build AppImage
+        run: |
+          curl -L \
+            https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage \
+            -o appimagetool
+          chmod +x appimagetool
+          ARCH=x86_64 ./appimagetool --appimage-extract-and-run \
+            AppDir \
+            CastleHeightMapStudio-Linux-x86_64.AppImage
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux
+          path: CastleHeightMapStudio-Linux-x86_64.AppImage
+
+  source:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure updater repository
+        run: |
+          python - <<'PY'
+          import json
+          p = "update_config.json"
+          d = json.load(open(p, encoding="utf-8"))
+          d["github_repo"] = "${{ github.repository }}"
+          json.dump(d, open(p, "w", encoding="utf-8"), indent=2)
+          PY
+
+      - name: Create source archive
+        run: |
+          zip -r CastleHeightMapStudio-Source.zip . \
+            -x ".git/*" ".venv/*" "build/*" "dist/*" "__pycache__/*"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: source
+          path: CastleHeightMapStudio-Source.zip
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/')
+    needs: [windows, linux, source]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="${GITHUB_REF_NAME}"
+          if ! gh release view "$TAG" >/dev/null 2>&1; then
+            gh release create "$TAG" --title "Castle HeightMap Studio $TAG" --generate-notes
+          fi
+          gh release upload "$TAG" \
+            artifacts/windows/CastleHeightMapStudio-Windows-x86_64.exe \
+            artifacts/linux/CastleHeightMapStudio-Linux-x86_64.AppImage \
+            artifacts/source/CastleHeightMapStudio-Source.zip \
+            --clobber
