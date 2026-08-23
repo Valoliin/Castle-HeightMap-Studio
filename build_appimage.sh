@@ -32,7 +32,7 @@ python -m PyInstaller \
     --add-data "update_config.json:."
 
 mkdir -p AppDir/usr/bin
-cp -a dist/CastleHeightMapStudio AppDir/usr/bin/CastleHeightMapStudio
+cp -a dist/CastleHeightMapStudio/. AppDir/usr/bin/
 cp packaging/linux/AppRun AppDir/AppRun
 cp packaging/linux/castle-heightmap-studio.desktop AppDir/castle-heightmap-studio.desktop
 cp assets/castle_heightmap_studio.png AppDir/castle-heightmap-studio.png
