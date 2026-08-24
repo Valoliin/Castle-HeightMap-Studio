@@ -64,10 +64,10 @@ import numpy as np
 from PIL import Image, ImageEnhance, ImageFilter, ImageOps, ImageTk
 
 
-APP_TITLE = "Castle HeightMap Studio v4.4.0"
+APP_TITLE = "Castle HeightMap Studio v4.4.2"
 
 APP_NAME = "Castle HeightMap Studio"
-APP_VERSION = "4.4.0"
+APP_VERSION = "4.4.2"
 APP_AUTHOR = "Valentin Bonali"
 
 
@@ -2074,77 +2074,446 @@ class App(tk.Tk):
             self.show_welcome_dialog()
 
     def show_welcome_dialog(self):
+        """
+        Écran d'accueil volontairement plus riche qu'une simple messagebox.
+
+        Il sert à présenter le projet, expliquer son origine CDR et donner
+        immédiatement accès aux trois actions principales.
+        """
         dlg = tk.Toplevel(self)
-        dlg.title("Bienvenue — Castle HeightMap Studio")
+        dlg.title(f"Bienvenue — {APP_NAME}")
         dlg.transient(self)
         dlg.grab_set()
-        dlg.geometry("760x560")
-        dlg.minsize(700, 520)
+        dlg.geometry("980x620")
+        dlg.minsize(900, 570)
 
-        outer = ttk.Frame(dlg, padding=16)
-        outer.pack(fill="both", expand=True)
+        # Centrage sur l'écran.
+        dlg.update_idletasks()
+        sw = dlg.winfo_screenwidth()
+        sh = dlg.winfo_screenheight()
+        ww = 980
+        wh = 620
+        dlg.geometry(f"{ww}x{wh}+{max(20, (sw-ww)//2)}+{max(20, (sh-wh)//2)}")
 
-        ttk.Label(
-            outer,
-            text="Castle HeightMap Studio",
-            font=("TkDefaultFont", 16, "bold")
+        BG = "#f4f6f8"
+        HERO = "#17212b"
+        HERO_2 = "#22303d"
+        GOLD = "#d6a84b"
+        WHITE = "#ffffff"
+        TEXT = "#20262d"
+        MUTED = "#65717d"
+        GREEN = "#1f8a55"
+        BORDER = "#d9dfe5"
+
+        dlg.configure(bg=BG)
+
+        # --------------------------------------------------------------
+        # Colonne gauche / identité visuelle
+        # --------------------------------------------------------------
+        hero = tk.Frame(dlg, bg=HERO, width=330)
+        hero.pack(side="left", fill="y")
+        hero.pack_propagate(False)
+
+        hero_inner = tk.Frame(hero, bg=HERO)
+        hero_inner.pack(fill="both", expand=True, padx=28, pady=28)
+
+        # Icône.
+        try:
+            icon_path = resource_path("assets/castle_heightmap_studio.png")
+            hero_icon = Image.open(icon_path).convert("RGBA")
+            hero_icon.thumbnail((92, 92), Image.Resampling.LANCZOS)
+            dlg._welcome_icon = ImageTk.PhotoImage(hero_icon)
+            tk.Label(
+                hero_inner,
+                image=dlg._welcome_icon,
+                bg=HERO,
+                bd=0,
+            ).pack(anchor="w", pady=(0, 18))
+        except Exception as exc:
+            APP_LOG.warning(f"Icône écran d'accueil non chargée : {exc}")
+
+        tk.Label(
+            hero_inner,
+            text="Castle\nHeightMap Studio",
+            bg=HERO,
+            fg=WHITE,
+            justify="left",
+            font=("TkDefaultFont", 24, "bold"),
         ).pack(anchor="w")
 
-        ttk.Label(
-            outer,
-            text="Outil créé pour un projet CDR — Coupe de France de Robotique.",
-            font=("TkDefaultFont", 10, "italic")
-        ).pack(anchor="w", pady=(2, 12))
+        tk.Label(
+            hero_inner,
+            text="IMAGE  →  HEIGHT-MAP  →  STEP",
+            bg=HERO,
+            fg=GOLD,
+            font=("TkDefaultFont", 9, "bold"),
+        ).pack(anchor="w", pady=(12, 16))
 
-        info = MarkdownText(outer)
-        info.pack(fill="both", expand=True)
-        info.set_markdown(WELCOME_MARKDOWN)
+        tk.Label(
+            hero_inner,
+            text=(
+                "Un outil né pour la Coupe de France de Robotique : "
+                "transformer rapidement des textures de pierre en reliefs CAO "
+                "prêts à être intégrés dans FreeCAD."
+            ),
+            bg=HERO,
+            fg="#d5dde5",
+            justify="left",
+            wraplength=265,
+            font=("TkDefaultFont", 10),
+        ).pack(anchor="w")
 
-        ttk.Label(
-            outer,
-            text=PROJECT_ORIGIN_TEXT,
-            wraplength=690,
-            justify="left"
-        ).pack(fill="x", pady=(12, 10))
+        tk.Frame(hero_inner, bg="#42515f", height=1).pack(fill="x", pady=22)
 
-        show_var = tk.BooleanVar(value=self.app_state.get("show_welcome_on_startup", True))
-        ttk.Checkbutton(
-            outer,
-            text="Afficher cet écran au démarrage",
-            variable=show_var
-        ).pack(anchor="w", pady=(4, 12))
+        # Aperçu de la texture exemple.
+        try:
+            preview_path = resource_path("docs/media/app_editor_example.png")
+            preview_img = Image.open(preview_path).convert("RGB")
+            preview_img.thumbnail((274, 154), Image.Resampling.LANCZOS)
+            dlg._welcome_example_preview = ImageTk.PhotoImage(preview_img)
+
+            preview_box = tk.Frame(
+                hero_inner,
+                bg=HERO_2,
+                highlightbackground="#42515f",
+                highlightthickness=1,
+                bd=0,
+            )
+            preview_box.pack(fill="x")
+
+            tk.Label(
+                preview_box,
+                image=dlg._welcome_example_preview,
+                bg=HERO_2,
+                bd=0,
+            ).pack(padx=7, pady=(7, 4))
+
+            tk.Label(
+                preview_box,
+                text="Aperçu de l’éditeur avec l’exemple CDR",
+                bg=HERO_2,
+                fg="#bfc9d3",
+                font=("TkDefaultFont", 8),
+            ).pack(anchor="w", padx=8, pady=(0, 7))
+        except Exception as exc:
+            APP_LOG.warning(f"Aperçu exemple non chargé : {exc}")
+
+        # Deuxième aperçu : intégration dans FreeCAD.
+        try:
+            fc_path = resource_path("docs/media/freecad_example.png")
+            fc_img = Image.open(fc_path).convert("RGB")
+            fc_img.thumbnail((274, 120), Image.Resampling.LANCZOS)
+            dlg._welcome_freecad_preview = ImageTk.PhotoImage(fc_img)
+
+            fc_box = tk.Frame(
+                hero_inner,
+                bg=HERO_2,
+                highlightbackground="#42515f",
+                highlightthickness=1,
+                bd=0,
+            )
+            fc_box.pack(fill="x", pady=(10, 0))
+
+            tk.Label(
+                fc_box,
+                image=dlg._welcome_freecad_preview,
+                bg=HERO_2,
+                bd=0,
+            ).pack(padx=7, pady=(7, 4))
+
+            tk.Label(
+                fc_box,
+                text="Exemple de relief importé dans FreeCAD",
+                bg=HERO_2,
+                fg="#bfc9d3",
+                font=("TkDefaultFont", 8),
+            ).pack(anchor="w", padx=8, pady=(0, 7))
+        except Exception as exc:
+            APP_LOG.warning(f"Aperçu FreeCAD non chargé : {exc}")
+
+        # Footer gauche.
+        footer_left = tk.Frame(hero_inner, bg=HERO)
+        footer_left.pack(side="bottom", fill="x", pady=(20, 0))
+
+        tk.Label(
+            footer_left,
+            text=f"v{APP_VERSION}",
+            bg=HERO,
+            fg=GOLD,
+            font=("TkDefaultFont", 9, "bold"),
+        ).pack(side="left")
+
+        tk.Label(
+            footer_left,
+            text=f"Valentin Bonali",
+            bg=HERO,
+            fg="#9eabb7",
+            font=("TkDefaultFont", 9),
+        ).pack(side="right")
+
+        # --------------------------------------------------------------
+        # Partie droite
+        # --------------------------------------------------------------
+        right = tk.Frame(dlg, bg=BG)
+        right.pack(side="left", fill="both", expand=True)
+
+        content = tk.Frame(right, bg=BG)
+        content.pack(fill="both", expand=True, padx=36, pady=28)
+
+        tk.Label(
+            content,
+            text="Bienvenue",
+            bg=BG,
+            fg=TEXT,
+            font=("TkDefaultFont", 23, "bold"),
+        ).pack(anchor="w")
+
+        tk.Label(
+            content,
+            text="Préparer une façade texturée pour le robot sans modéliser chaque pierre à la main.",
+            bg=BG,
+            fg=MUTED,
+            font=("TkDefaultFont", 10),
+            justify="left",
+            wraplength=560,
+        ).pack(anchor="w", pady=(4, 18))
+
+        # Badge exemple chargé.
+        example_loaded = bool(self.layers)
+        badge = tk.Frame(
+            content,
+            bg="#e9f6ef" if example_loaded else "#fff4df",
+            highlightbackground="#b9dfca" if example_loaded else "#efd197",
+            highlightthickness=1,
+        )
+        badge.pack(fill="x", pady=(0, 20))
+
+        tk.Label(
+            badge,
+            text="●",
+            bg=badge["bg"],
+            fg=GREEN if example_loaded else "#b97900",
+            font=("TkDefaultFont", 11, "bold"),
+        ).pack(side="left", padx=(12, 7), pady=9)
+
+        tk.Label(
+            badge,
+            text=(
+                "L'exemple CDR est déjà chargé : tu peux modifier ses réglages immédiatement."
+                if example_loaded
+                else "L'exemple CDR peut être chargé en un clic."
+            ),
+            bg=badge["bg"],
+            fg=TEXT,
+            font=("TkDefaultFont", 9, "bold"),
+        ).pack(side="left", pady=9)
+
+        # --------------------------------------------------------------
+        # Trois étapes.
+        # --------------------------------------------------------------
+        tk.Label(
+            content,
+            text="Le principe",
+            bg=BG,
+            fg=TEXT,
+            font=("TkDefaultFont", 12, "bold"),
+        ).pack(anchor="w", pady=(0, 8))
+
+        steps = tk.Frame(content, bg=BG)
+        steps.pack(fill="x", pady=(0, 22))
+        steps.grid_columnconfigure(0, weight=1)
+        steps.grid_columnconfigure(1, weight=1)
+        steps.grid_columnconfigure(2, weight=1)
+
+        step_data = [
+            ("1", "Composer", "Place, raccorde et masque tes textures."),
+            ("2", "Régler le relief", "Transforme l'image en height-map et contrôle la 3D."),
+            ("3", "Exporter", "Crée un STEP directement exploitable dans FreeCAD."),
+        ]
+
+        for col, (num, title, desc) in enumerate(step_data):
+            card = tk.Frame(
+                steps,
+                bg=WHITE,
+                highlightbackground=BORDER,
+                highlightthickness=1,
+            )
+            card.grid(
+                row=0,
+                column=col,
+                sticky="nsew",
+                padx=(0 if col == 0 else 6, 0 if col == 2 else 6),
+            )
+
+            top = tk.Frame(card, bg=WHITE)
+            top.pack(fill="x", padx=12, pady=(12, 5))
+
+            tk.Label(
+                top,
+                text=num,
+                bg=GOLD,
+                fg="#1d2329",
+                width=2,
+                font=("TkDefaultFont", 10, "bold"),
+            ).pack(side="left")
+
+            tk.Label(
+                top,
+                text=title,
+                bg=WHITE,
+                fg=TEXT,
+                font=("TkDefaultFont", 10, "bold"),
+            ).pack(side="left", padx=8)
+
+            tk.Label(
+                card,
+                text=desc,
+                bg=WHITE,
+                fg=MUTED,
+                wraplength=160,
+                justify="left",
+                font=("TkDefaultFont", 9),
+            ).pack(anchor="w", padx=12, pady=(2, 13))
+
+        # --------------------------------------------------------------
+        # Actions principales
+        # --------------------------------------------------------------
+        tk.Label(
+            content,
+            text="Commencer",
+            bg=BG,
+            fg=TEXT,
+            font=("TkDefaultFont", 12, "bold"),
+        ).pack(anchor="w", pady=(0, 8))
+
+        show_var = tk.BooleanVar(
+            value=self.app_state.get("show_welcome_on_startup", True)
+        )
 
         def save_pref():
             self.app_state["show_welcome_on_startup"] = bool(show_var.get())
             self.app_state["startup_initialized"] = True
             save_app_state(self.app_state)
 
-        btns = ttk.Frame(outer)
-        btns.pack(fill="x")
+        def close_dialog():
+            save_pref()
+            dlg.destroy()
 
-        def do_keep_example():
+        def keep_example():
             save_pref()
             if not self.layers:
                 self.load_example_project(mark_initialized=False)
             dlg.destroy()
 
-        def do_new():
+        def new_empty():
             save_pref()
-            self.new_project()
             dlg.destroy()
+            self.new_project()
 
-        def do_open():
+        def open_existing():
             save_pref()
             dlg.destroy()
             self.open_project()
 
-        ttk.Button(btns, text="Garder l'exemple CDR", command=do_keep_example).pack(side="left")
-        ttk.Button(btns, text="Nouveau projet vide", command=do_new).pack(side="left", padx=8)
-        ttk.Button(btns, text="Ouvrir un projet…", command=do_open).pack(side="left")
-        ttk.Button(btns, text="Fermer", command=lambda: (save_pref(), dlg.destroy())).pack(side="right")
+        actions = tk.Frame(content, bg=BG)
+        actions.pack(fill="x")
 
-        dlg.protocol("WM_DELETE_WINDOW", lambda: (save_pref(), dlg.destroy()))
+        primary = tk.Button(
+            actions,
+            text="Continuer avec l'exemple CDR",
+            command=keep_example,
+            bg=GOLD,
+            fg="#15191d",
+            activebackground="#e3bb69",
+            activeforeground="#15191d",
+            relief="flat",
+            bd=0,
+            padx=18,
+            pady=11,
+            cursor="hand2",
+            font=("TkDefaultFont", 10, "bold"),
+        )
+        primary.pack(fill="x", pady=(0, 8))
+
+        secondary_row = tk.Frame(actions, bg=BG)
+        secondary_row.pack(fill="x")
+        secondary_row.grid_columnconfigure(0, weight=1)
+        secondary_row.grid_columnconfigure(1, weight=1)
+
+        for col, label, command in [
+            (0, "Nouveau projet vide", new_empty),
+            (1, "Ouvrir un projet…", open_existing),
+        ]:
+            btn = tk.Button(
+                secondary_row,
+                text=label,
+                command=command,
+                bg=WHITE,
+                fg=TEXT,
+                activebackground="#edf1f4",
+                activeforeground=TEXT,
+                relief="solid",
+                bd=1,
+                padx=14,
+                pady=9,
+                cursor="hand2",
+                font=("TkDefaultFont", 9, "bold"),
+            )
+            btn.grid(
+                row=0,
+                column=col,
+                sticky="ew",
+                padx=(0 if col == 0 else 5, 5 if col == 0 else 0),
+            )
+
+        # --------------------------------------------------------------
+        # Footer droit : préférence + aide.
+        # --------------------------------------------------------------
+        footer = tk.Frame(content, bg=BG)
+        footer.pack(side="bottom", fill="x", pady=(18, 0))
+
+        tk.Checkbutton(
+            footer,
+            text="Afficher cet écran au démarrage",
+            variable=show_var,
+            bg=BG,
+            fg=MUTED,
+            activebackground=BG,
+            activeforeground=TEXT,
+            selectcolor=WHITE,
+            bd=0,
+            highlightthickness=0,
+        ).pack(side="left")
+
+        tk.Button(
+            footer,
+            text="Aide",
+            command=lambda: self.show_info_dialog("help"),
+            bg=BG,
+            fg="#426b91",
+            activebackground=BG,
+            activeforeground="#244d72",
+            relief="flat",
+            bd=0,
+            cursor="hand2",
+        ).pack(side="right")
+
+        tk.Button(
+            footer,
+            text="Changelog",
+            command=lambda: self.show_info_dialog("changelog"),
+            bg=BG,
+            fg="#426b91",
+            activebackground=BG,
+            activeforeground="#244d72",
+            relief="flat",
+            bd=0,
+            cursor="hand2",
+        ).pack(side="right", padx=(0, 8))
+
+        dlg.protocol("WM_DELETE_WINDOW", close_dialog)
         self.after(50, lambda: dlg.focus_force())
+
 
     def show_info_dialog(self, initial_tab="about"):
         win = tk.Toplevel(self)
@@ -3480,6 +3849,13 @@ def run_self_test() -> int:
         checks.append(("numpy/pillow", im.size == (4, 4), str(im.size)))
     except Exception as exc:
         checks.append(("numpy/pillow", False, repr(exc)))
+
+    try:
+        import PIL._tkinter_finder  # noqa: F401
+        from PIL import ImageTk  # noqa: F401
+        checks.append(("pillow/tk", True, "PIL._tkinter_finder + ImageTk"))
+    except Exception as exc:
+        checks.append(("pillow/tk", False, repr(exc)))
 
     failed = any(not ok for _name, ok, _detail in checks)
 

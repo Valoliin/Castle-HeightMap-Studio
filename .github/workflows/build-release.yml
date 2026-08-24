@@ -36,6 +36,7 @@ jobs:
         shell: pwsh
         run: |
           python -c "import casadi, casadi._casadi, cadquery; print('CasADi:', casadi.__version__); print('CadQuery:', cadquery.__version__)"
+          python -c "import PIL._tkinter_finder; from PIL import ImageTk; print('Pillow/Tk: OK')"
 
       - name: Build EXE
         run: python build_tools/build_pyinstaller.py
@@ -122,6 +123,9 @@ jobs:
             --hidden-import casadi._casadi \
             --hidden-import _casadi \
             --collect-all matplotlib \
+            --collect-submodules PIL \
+            --hidden-import PIL.ImageTk \
+            --hidden-import PIL._tkinter_finder \
             --additional-hooks-dir "build_tools/pyinstaller_hooks" \
             --runtime-hook "build_tools/rthook_casadi.py" \
             --add-data "docs:docs" \

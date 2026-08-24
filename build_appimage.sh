@@ -29,6 +29,9 @@ python -m PyInstaller \
     --hidden-import casadi._casadi \
     --hidden-import _casadi \
     --collect-all matplotlib \
+    --collect-submodules PIL \
+    --hidden-import PIL.ImageTk \
+    --hidden-import PIL._tkinter_finder \
     --additional-hooks-dir "build_tools/pyinstaller_hooks" \
     --runtime-hook "build_tools/rthook_casadi.py" \
     --add-data "docs:docs" \

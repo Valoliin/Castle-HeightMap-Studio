@@ -1,5 +1,32 @@
 # Changelog — Castle HeightMap Studio
 
+## 4.4.2
+- Intégration de vraies captures d’écran du projet dans le README GitHub.
+- Ajout de captures dans l’écran de bienvenue : vue de l’éditeur et vue FreeCAD.
+- Reprise de la présentation du projet avec des visuels plus concrets.
+- Correction du bug AppImage `No module named 'PIL._tkinter_finder'`.
+- Ajout du packaging explicite de Pillow/Tk dans les builds Linux et Windows.
+- Ajout de `--collect-submodules PIL`.
+- Ajout des imports cachés `PIL.ImageTk` et `PIL._tkinter_finder`.
+- Ajout d’un test `pillow/tk` dans le self-test du binaire final.
+- Lancement via AppImage et lancement via `./run.sh` doivent maintenant se comporter pareil côté rendu.
+
+
+## 4.4.1
+- Refonte complète de l'écran de bienvenue.
+- Nouvelle présentation en deux colonnes avec identité visuelle sombre et accent doré.
+- Affichage de l'icône du logiciel, de la version et de l'auteur.
+- Aperçu visuel de la texture CDR fournie.
+- Présentation en trois étapes : Composer → Régler le relief → Exporter.
+- Indicateur indiquant si l'exemple CDR est déjà chargé.
+- Actions de démarrage plus visibles : continuer avec l'exemple, nouveau projet ou ouvrir un projet.
+- Liens directs vers l'aide et le changelog.
+- Correction du prototype v4.4.0 qui faisait référence à un widget `MarkdownText` inexistant.
+- README GitHub entièrement remanié avec une vraie description du logiciel en tête de page.
+- Ajout dans le README de l'origine CDR, du problème que le logiciel cherche à résoudre et du workflow complet vers FreeCAD.
+- Ajout d'une liste détaillée des fonctionnalités et de la présentation de l'exemple CDR.
+
+
 ## 4.4.0
 - Ajout d'un écran de bienvenue / premier démarrage.
 - Ajout d'une description claire de l'origine du projet : **CDR — Coupe de France de Robotique**.

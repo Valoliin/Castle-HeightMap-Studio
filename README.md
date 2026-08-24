@@ -1,8 +1,115 @@
-# Castle HeightMap Studio v4.4.0
+# Castle HeightMap Studio
 
-**Auteur : Valentin Bonali**
+**Éditeur de textures et de height-maps pour générer des reliefs 3D STEP utilisables directement dans FreeCAD.**
 
-Castle HeightMap Studio transforme des images et textures en reliefs 3D exportables en STEP, avec un workflow pensé pour FreeCAD et l'impression 3D.
+**Version 4.4.2 · Auteur : Valentin Bonali · Windows / Linux · Licence MIT**
+
+Castle HeightMap Studio permet de partir d'une simple image — mur en pierre, briques, gravure, motif décoratif — pour construire une façade texturée aux dimensions réelles, prévisualiser son relief puis l'exporter sous forme de **solide STEP**.
+
+Le logiciel ne se limite pas à une conversion image → relief : il sert aussi de petit éditeur de préparation. Plusieurs textures peuvent être assemblées, déplacées, étirées, raccordées, masquées et réglées avant de générer la géométrie finale.
+
+![Aperçu de l’éditeur avec un mur exemple](docs/media/app_editor_example.png)
+
+## Pourquoi ce projet existe
+
+Castle HeightMap Studio est né dans le cadre d'un projet **CDR — Coupe de France de Robotique**.
+
+L'objectif d'origine est très concret : habiller un robot avec une esthétique **château fort / Camelot** tout en continuant à concevoir la mécanique dans **FreeCAD**. Modéliser manuellement des dizaines ou centaines de pierres sur toutes les façades aurait été long, répétitif et pénible à modifier.
+
+Le logiciel sert donc à transformer rapidement une texture 2D en une vraie géométrie CAO :
+
+```text
+Image / texture
+      ↓
+Composition des calques
+      ↓
+Height-map
+      ↓
+Relief 3D
+      ↓
+STEP
+      ↓
+FreeCAD
+      ↓
+Pièce finale / impression 3D
+```
+
+Même si le projet vient de la robotique, l'outil est volontairement général : il peut servir pour des **décors, maquettes, boîtiers, façades, plaques gravées, murs miniatures ou pièces imprimées en 3D**.
+
+## Fonctionnalités principales
+
+- **Composition multi-calques** avec déplacement et redimensionnement libre.
+- Position et dimensions précises en **millimètres**.
+- Rotation, verrouillage du ratio et grille magnétique.
+- Raccord automatique, raccord doux et duplication miroir pour prolonger une texture.
+- Création de textures répétables.
+- Réglages de height-map : HSV, contraste, niveaux noir/blanc, gamma et lissage.
+- Presets pour pierre douce, pierre marquée et gravure.
+- **Masques pinceau, rectangle et cercle/ellipse** pour conserver des zones parfaitement planes.
+- Aperçu 2D de la composition.
+- Aperçu de la height-map.
+- **Aperçu 3D intégré**.
+- Export d'un **vrai solide STEP** via CadQuery / OpenCascade.
+- Export STEP multi-corps optionnel `Mur_complet` + `Base_reference` dans le même repère.
+- Résolution STEP adaptative sécurisée avec contrôle anti-overshoot.
+- Sauvegarde de projets `.castlehm`.
+- Undo / Redo.
+- Aide intégrée sous forme de mini-wiki.
+- Changelog intégré.
+- Vérification des nouvelles versions via GitHub Releases.
+- Builds `.exe` Windows et `.AppImage` Linux.
+
+## Exemple CDR inclus
+
+Un projet d'exemple est fourni dans :
+
+```text
+examples/cdr_castle_wall_example.castlehm
+```
+
+Au **premier lancement**, Castle HeightMap Studio charge automatiquement cet exemple et affiche un écran d'accueil expliquant le workflow.
+
+L'exemple peut être rechargé à tout moment avec :
+
+```text
+Fichier → Ouvrir l'exemple CDR
+```
+
+## Workflow FreeCAD
+
+L'export optionnel avec corps de référence génère un seul STEP contenant :
+
+```text
+Mur_complet
+Base_reference
+```
+
+![Exemple de relief importé dans FreeCAD](docs/media/freecad_example.png)
+
+Les deux corps utilisent exactement le même système de coordonnées. Dans FreeCAD, on peut donc récupérer uniquement le relief par une opération booléenne :
+
+```text
+Relief = Cut(Mur_complet, Base_reference)
+```
+
+Aucun recalage manuel des deux corps n'est nécessaire.
+
+
+## Correctif AppImage
+
+La v4.4.2 corrige un bug de rendu rencontré uniquement dans l’AppImage :
+
+```text
+No module named 'PIL._tkinter_finder'
+```
+
+Cause : le pont Tk de Pillow (`PIL.ImageTk` / `PIL._tkinter_finder`) n’était pas collecté correctement dans le binaire packagé, alors que le lancement via `./run.sh` utilisait bien l’environnement Python complet.
+
+Correctif appliqué :
+- ajout de `--collect-submodules PIL`
+- ajout de `--hidden-import PIL.ImageTk`
+- ajout de `--hidden-import PIL._tkinter_finder`
+- ajout d’un self-test dédié `pillow/tk` sur le binaire final
 
 ## Installation rapide
 
@@ -188,21 +295,4 @@ Le self-test de release effectue ensuite une vraie création de solide CadQuery
 pour vérifier que la pile CadQuery/OpenCascade/CasADi est fonctionnelle.
 
 
-## Origine du projet
 
-Castle HeightMap Studio a été créé pour un projet **CDR — Coupe de France de Robotique**.
-
-L'idée est de produire rapidement des textures de murs, des height-maps et des fichiers STEP
-pour habiller un robot sur un thème **château fort / Camelot**, tout en gardant un workflow
-simple avec **FreeCAD** et l'impression 3D.
-
-En clair : éviter la punition médiévale qui consiste à modéliser chaque pierre à la main.
-
-## Premier démarrage
-
-Au premier lancement, l'application :
-
-- affiche un **écran de bienvenue** ;
-- explique l'origine et l'objectif du projet ;
-- charge automatiquement un **exemple CDR** ;
-- permet ensuite de partir sur un projet vide ou d'ouvrir son propre fichier.
