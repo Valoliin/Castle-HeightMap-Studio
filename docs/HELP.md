@@ -1,5 +1,13 @@
 # Aide — Castle HeightMap Studio
 
+## Origine du projet
+
+Castle HeightMap Studio a été créé pour un projet **CDR — Coupe de France de Robotique**.
+
+L'objectif est de générer rapidement des murs texturés, des height-maps et des STEP pour FreeCAD.
+
+# Aide — Castle HeightMap Studio
+
 Castle HeightMap Studio transforme une image ou une composition de textures en relief 3D exportable en STEP pour FreeCAD.
 
 ## Workflow rapide

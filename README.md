@@ -1,4 +1,4 @@
-# Castle HeightMap Studio v4.3.3
+# Castle HeightMap Studio v4.4.0
 
 **Auteur : Valentin Bonali**
 
@@ -186,3 +186,23 @@ Le build inclut donc :
 
 Le self-test de release effectue ensuite une vraie création de solide CadQuery
 pour vérifier que la pile CadQuery/OpenCascade/CasADi est fonctionnelle.
+
+
+## Origine du projet
+
+Castle HeightMap Studio a été créé pour un projet **CDR — Coupe de France de Robotique**.
+
+L'idée est de produire rapidement des textures de murs, des height-maps et des fichiers STEP
+pour habiller un robot sur un thème **château fort / Camelot**, tout en gardant un workflow
+simple avec **FreeCAD** et l'impression 3D.
+
+En clair : éviter la punition médiévale qui consiste à modéliser chaque pierre à la main.
+
+## Premier démarrage
+
+Au premier lancement, l'application :
+
+- affiche un **écran de bienvenue** ;
+- explique l'origine et l'objectif du projet ;
+- charge automatiquement un **exemple CDR** ;
+- permet ensuite de partir sur un projet vide ou d'ouvrir son propre fichier.

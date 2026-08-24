@@ -64,10 +64,10 @@ import numpy as np
 from PIL import Image, ImageEnhance, ImageFilter, ImageOps, ImageTk
 
 
-APP_TITLE = "Castle HeightMap Studio v4.3.3"
+APP_TITLE = "Castle HeightMap Studio v4.4.0"
 
 APP_NAME = "Castle HeightMap Studio"
-APP_VERSION = "4.3.3"
+APP_VERSION = "4.4.0"
 APP_AUTHOR = "Valentin Bonali"
 
 
@@ -149,6 +149,59 @@ MIN_LAYER_SIZE = 0.02  # fraction de la dimension du mur
 
 
 LOG_FILENAME = "castle_heightmap.log"
+
+
+
+APP_STATE_FILENAME = "castle_heightmap_studio_state.json"
+
+PROJECT_ORIGIN_TEXT = (
+    "Castle HeightMap Studio est né pour le projet CDR (Coupe de France de Robotique). "
+    "L'objectif est de générer rapidement des murs texturés, des height-maps et des fichiers STEP "
+    "pour habiller un robot — ici avec une esthétique château fort / Camelot — sans passer des heures "
+    "à tout remodeler pierre par pierre dans un logiciel de CAO."
+)
+
+WELCOME_MARKDOWN = """# Bienvenue dans Castle HeightMap Studio
+
+**Origine du projet**  
+Castle HeightMap Studio a été créé pour un projet de **CDR — Coupe de France de Robotique**.
+
+**Objectif**  
+Créer rapidement des murs texturés, des height-maps et des STEP pour intégrer un décor de château fort
+dans un modèle FreeCAD, sans se coltiner une modélisation pierre par pierre.
+
+## Conseils de départ
+- Un **exemple CDR** est fourni dans l'application.
+- Tu peux partir d'un simple mur en pierre en niveaux de gris.
+- Les zones noires correspondent au **fond** ; les zones blanches au **relief maximum**.
+- L'exemple fourni est surtout là pour te montrer un flux complet : texture → height-map → STEP.
+
+## Workflow typique
+1. Ouvrir l'exemple CDR ou une image de mur.
+2. Ajuster les paramètres de relief.
+3. Poser des masques si besoin.
+4. Exporter le STEP pour l'intégrer dans FreeCAD.
+"""
+
+
+def app_state_path() -> Path:
+    return user_state_dir() / APP_STATE_FILENAME
+
+
+def load_app_state() -> dict:
+    path = app_state_path()
+    if not path.exists():
+        return {}
+    try:
+        return json.loads(path.read_text(encoding="utf-8"))
+    except Exception:
+        return {}
+
+
+def save_app_state(data: dict):
+    path = app_state_path()
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 
 def user_state_dir() -> Path:
@@ -1906,6 +1959,9 @@ class App(tk.Tk):
         self.after(200, self.update_3d_preview)
         self.update_window_title()
 
+        self.app_state = load_app_state()
+        self.after(220, self._startup_sequence)
+
     # ------------------------------------------------------------------
     # Application / menus / aide
     # ------------------------------------------------------------------
@@ -1925,6 +1981,7 @@ class App(tk.Tk):
         file_menu = tk.Menu(menubar, tearoff=0)
         file_menu.add_command(label="Nouveau", accelerator="Ctrl+N", command=self.new_project)
         file_menu.add_command(label="Ouvrir…", accelerator="Ctrl+O", command=self.open_project)
+        file_menu.add_command(label="Ouvrir l'exemple CDR", command=self.load_example_project)
         file_menu.add_separator()
         file_menu.add_command(label="Enregistrer", accelerator="Ctrl+S", command=self.save_project)
         file_menu.add_command(label="Enregistrer sous…", accelerator="Ctrl+Shift+S", command=self.save_project_as)
@@ -1945,6 +2002,7 @@ class App(tk.Tk):
         menubar.add_cascade(label="Édition", menu=edit_menu)
 
         help_menu = tk.Menu(menubar, tearoff=0)
+        help_menu.add_command(label="Écran de bienvenue", command=self.show_welcome_dialog)
         help_menu.add_command(label="Aide", accelerator="F1", command=lambda: self.show_info_dialog("help"))
         help_menu.add_command(label="Changelog", command=lambda: self.show_info_dialog("changelog"))
         help_menu.add_separator()
@@ -1994,6 +2052,99 @@ class App(tk.Tk):
             f"CadQuery : {cq_version}\n"
             f"Dépôt GitHub : {detect_github_repo() or 'non configuré'}"
         )
+
+
+    def _startup_sequence(self):
+        """
+        Premier démarrage :
+        - charge automatiquement l'exemple CDR ;
+        - affiche une fenêtre de bienvenue ;
+        - mémorise la préférence utilisateur.
+        """
+        first_run = not bool(self.app_state.get("startup_initialized", False))
+        show_welcome = self.app_state.get("show_welcome_on_startup", True)
+
+        if first_run and not self.layers:
+            try:
+                self.load_example_project(mark_initialized=False)
+            except Exception as exc:
+                APP_LOG.warning(f"Exemple CDR non chargé au premier démarrage : {exc}")
+
+        if first_run or show_welcome:
+            self.show_welcome_dialog()
+
+    def show_welcome_dialog(self):
+        dlg = tk.Toplevel(self)
+        dlg.title("Bienvenue — Castle HeightMap Studio")
+        dlg.transient(self)
+        dlg.grab_set()
+        dlg.geometry("760x560")
+        dlg.minsize(700, 520)
+
+        outer = ttk.Frame(dlg, padding=16)
+        outer.pack(fill="both", expand=True)
+
+        ttk.Label(
+            outer,
+            text="Castle HeightMap Studio",
+            font=("TkDefaultFont", 16, "bold")
+        ).pack(anchor="w")
+
+        ttk.Label(
+            outer,
+            text="Outil créé pour un projet CDR — Coupe de France de Robotique.",
+            font=("TkDefaultFont", 10, "italic")
+        ).pack(anchor="w", pady=(2, 12))
+
+        info = MarkdownText(outer)
+        info.pack(fill="both", expand=True)
+        info.set_markdown(WELCOME_MARKDOWN)
+
+        ttk.Label(
+            outer,
+            text=PROJECT_ORIGIN_TEXT,
+            wraplength=690,
+            justify="left"
+        ).pack(fill="x", pady=(12, 10))
+
+        show_var = tk.BooleanVar(value=self.app_state.get("show_welcome_on_startup", True))
+        ttk.Checkbutton(
+            outer,
+            text="Afficher cet écran au démarrage",
+            variable=show_var
+        ).pack(anchor="w", pady=(4, 12))
+
+        def save_pref():
+            self.app_state["show_welcome_on_startup"] = bool(show_var.get())
+            self.app_state["startup_initialized"] = True
+            save_app_state(self.app_state)
+
+        btns = ttk.Frame(outer)
+        btns.pack(fill="x")
+
+        def do_keep_example():
+            save_pref()
+            if not self.layers:
+                self.load_example_project(mark_initialized=False)
+            dlg.destroy()
+
+        def do_new():
+            save_pref()
+            self.new_project()
+            dlg.destroy()
+
+        def do_open():
+            save_pref()
+            dlg.destroy()
+            self.open_project()
+
+        ttk.Button(btns, text="Garder l'exemple CDR", command=do_keep_example).pack(side="left")
+        ttk.Button(btns, text="Nouveau projet vide", command=do_new).pack(side="left", padx=8)
+        ttk.Button(btns, text="Ouvrir un projet…", command=do_open).pack(side="left")
+        ttk.Button(btns, text="Fermer", command=lambda: (save_pref(), dlg.destroy())).pack(side="right")
+
+        dlg.protocol("WM_DELETE_WINDOW", lambda: (save_pref(), dlg.destroy()))
+        self.after(50, lambda: dlg.focus_force())
 
     def show_info_dialog(self, initial_tab="about"):
         win = tk.Toplevel(self)
@@ -2751,31 +2902,80 @@ Les licences de ces composants restent celles de leurs projets respectifs.
         except Exception as exc:
             messagebox.showerror(APP_TITLE, f"Échec enregistrement projet :\n{exc}")
 
+    def _open_project_from_path(self, path: Path, *, as_template: bool = False):
+        with zipfile.ZipFile(path, "r") as z:
+            data = json.loads(z.read("project.json").decode("utf-8"))
+            layers = []
+            for d in data.get("layers", []):
+                raw = z.read(d["image"])
+                img = Image.open(io.BytesIO(raw))
+                img.load()
+                img = img.convert("RGB").copy()
+                layers.append(
+                    TextureLayer(
+                        name=d["name"],
+                        path=d.get("path", ""),
+                        image=img,
+                        x=d["x"],
+                        y=d["y"],
+                        w=d["w"],
+                        h=d["h"],
+                        visible=d.get("visible", True),
+                        locked=d.get("locked", False),
+                        rotation_deg=d.get("rotation_deg", 0),
+                        lock_aspect=d.get("lock_aspect", False),
+                        feather_pct=d.get("feather_pct", 0),
+                        uid=d["uid"],
+                    )
+                )
+            masks = [MaskShape(**m) for m in data.get("masks", [])]
+
+        self.layers = layers
+        self.masks = masks
+        self.selected_uid = data.get("selected_uid")
+        self.next_uid = data.get("next_uid", max([l.uid for l in layers], default=0) + 1)
+        self.next_mask_uid = data.get("next_mask_uid", max([m.uid for m in masks], default=0) + 1)
+
+        s = data.get("settings", {})
+        for key, var in [
+            ("wall_w", self.wall_w), ("wall_h", self.wall_h), ("base_mm", self.base_mm), ("relief_mm", self.relief_mm),
+            ("sample_mm", self.sample_mm), ("flip_y", self.flip_y), ("bands_mode", self.bands_mode), ("adaptive", self.adaptive),
+            ("adaptive_tol", self.adaptive_tol), ("reference_body", self.reference_body), ("hue", self.hue), ("sat", self.sat),
+            ("val", self.val), ("contrast", self.contrast), ("black", self.black), ("white", self.white), ("gamma", self.gamma),
+            ("blur", self.blur), ("invert", self.invert), ("grid_mm", self.grid_mm), ("snap_grid", self.snap_grid), ("brush_mm", self.brush_mm)
+        ]:
+            if key in s:
+                var.set(s[key])
+
+        self.project_path = None if as_template else Path(path)
+        self.history = []
+        self.redo_stack = []
+        self.dirty = False
+        self.refresh_layer_tree()
+        self.update_layer_fields()
+        self.update_idletasks()
+        self.render()
+        self.update_3d_preview()
+        label = "Exemple CDR chargé." if as_template else f"Projet ouvert : {path}"
+        self.status.set(label)
+        APP_LOG.info(label)
+        self.update_window_title()
+
+    def load_example_project(self, mark_initialized: bool = False):
+        example = resource_path("examples/cdr_castle_wall_example.castlehm")
+        if not example.exists():
+            raise FileNotFoundError(f"Exemple introuvable : {example}")
+        self._open_project_from_path(example, as_template=True)
+        if mark_initialized:
+            self.app_state["startup_initialized"] = True
+            save_app_state(self.app_state)
+
     def open_project(self):
-        path=filedialog.askopenfilename(title="Ouvrir un projet", filetypes=[("Castle HeightMap Project", "*.castlehm")])
-        if not path: return
+        path = filedialog.askopenfilename(title="Ouvrir un projet", filetypes=[("Castle HeightMap Project", "*.castlehm")])
+        if not path:
+            return
         try:
-            with zipfile.ZipFile(path, "r") as z:
-                data=json.loads(z.read("project.json").decode("utf-8"))
-                layers=[]
-                for d in data.get("layers",[]):
-                    img=Image.open(io.BytesIO(z.read(d["image"]))).convert("RGB")
-                    layers.append(TextureLayer(name=d["name"],path=d.get("path",""),image=img,x=d["x"],y=d["y"],w=d["w"],h=d["h"],
-                        visible=d.get("visible",True),locked=d.get("locked",False),rotation_deg=d.get("rotation_deg",0),
-                        lock_aspect=d.get("lock_aspect",False),feather_pct=d.get("feather_pct",0),uid=d["uid"]))
-                masks=[MaskShape(**m) for m in data.get("masks",[])]
-            self.layers=layers; self.masks=masks; self.selected_uid=data.get("selected_uid")
-            self.next_uid=data.get("next_uid", max([l.uid for l in layers], default=0)+1)
-            self.next_mask_uid=data.get("next_mask_uid", max([m.uid for m in masks], default=0)+1)
-            s=data.get("settings",{})
-            for key,var in [("wall_w",self.wall_w),("wall_h",self.wall_h),("base_mm",self.base_mm),("relief_mm",self.relief_mm),
-                ("sample_mm",self.sample_mm),("flip_y",self.flip_y),("bands_mode",self.bands_mode),("adaptive",self.adaptive),
-                ("adaptive_tol",self.adaptive_tol),("reference_body",self.reference_body),("hue",self.hue),("sat",self.sat),
-                ("val",self.val),("contrast",self.contrast),("black",self.black),("white",self.white),("gamma",self.gamma),
-                ("blur",self.blur),("invert",self.invert),("grid_mm",self.grid_mm),("snap_grid",self.snap_grid),("brush_mm",self.brush_mm)]:
-                if key in s: var.set(s[key])
-            self.project_path=Path(path); self.history=[]; self.redo_stack=[]; self.dirty=False
-            self.refresh_layer_tree(); self.update_layer_fields(); self.schedule_render(); self.status.set(f"Projet ouvert : {path}"); self.update_window_title()
+            self._open_project_from_path(Path(path), as_template=False)
         except Exception as exc:
             messagebox.showerror(APP_TITLE, f"Impossible d'ouvrir le projet :\n{exc}")
 
@@ -3077,10 +3277,15 @@ Les licences de ces composants restent celles de leurs projets respectifs.
         self.render_after=None;self.canvas.delete("all")
         cw=max(30,self.canvas.winfo_width());ch=max(30,self.canvas.winfo_height());rect=wall_rect(cw,ch,self.aspect_ratio());x0,y0,x1,y1=rect
         rw=max(2,int(round(x1-x0)));rh=max(2,int(round(y1-y0)))
-        if self.layers:
-            preview=compose_layers(self.layers,(rw,rh),include_feather=True);self.editor_photo=ImageTk.PhotoImage(preview)
-            self.canvas.create_image(x0,y0,image=self.editor_photo,anchor="nw")
-        else:self.canvas.create_rectangle(x0,y0,x1,y1,fill="#000000",outline="")
+        try:
+            if self.layers:
+                preview=compose_layers(self.layers,(rw,rh),include_feather=True);self.editor_photo=ImageTk.PhotoImage(preview)
+                self.canvas.create_image(x0,y0,image=self.editor_photo,anchor="nw")
+            else:self.canvas.create_rectangle(x0,y0,x1,y1,fill="#000000",outline="")
+        except Exception as exc:
+            APP_LOG.error(f"Rendu éditeur impossible : {exc}")
+            self.canvas.create_rectangle(x0,y0,x1,y1,fill="#111111",outline="")
+            self.canvas.create_text((x0+x1)/2,(y0+y1)/2, text=f"Erreur de rendu\n{exc}", fill="#ffffff", justify="center")
         self.canvas.create_rectangle(x0,y0,x1,y1,outline="#ff3030",width=3)
         try:w=float(self.wall_w.get().replace(",","."));h=float(self.wall_h.get().replace(",","."));label=f"{w:g} × {h:g} mm"
         except:label="mur"

@@ -1,5 +1,18 @@
 # Changelog — Castle HeightMap Studio
 
+## 4.4.0
+- Ajout d'un écran de bienvenue / premier démarrage.
+- Ajout d'une description claire de l'origine du projet : **CDR — Coupe de France de Robotique**.
+- Ajout d'un exemple CDR chargé automatiquement au premier lancement.
+- Ajout d'une commande **Fichier → Ouvrir l'exemple CDR**.
+- Ajout d'une commande **Aide → Écran de bienvenue**.
+- Le README et l'aide embarquée rappellent désormais l'objectif du projet.
+- Refactor de l'ouverture de projet avec une méthode réutilisable.
+- Chargement plus robuste des images embarquées dans les projets (`load()`, `copy()`).
+- Après ouverture d'un projet/exemple, rendu 2D et aperçu 3D sont forcés immédiatement.
+- Le rendu 2D journalise maintenant proprement ses erreurs au lieu de juste tout faire disparaître comme un magicien fatigué.
+
+
 ## 4.3.3
 - Correction du packaging Windows de CasADi utilisé indirectement par CadQuery.
 - Ajout d'un hook PyInstaller `hook-casadi.py`.
