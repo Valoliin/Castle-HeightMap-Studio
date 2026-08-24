@@ -43,6 +43,15 @@ import urllib.request
 import urllib.error
 import subprocess
 import configparser
+
+# PyInstaller --windowed / pythonw.exe sous Windows ne fournissent pas
+# stdin/stdout/stderr. Certaines bibliothèques et nos outils de diagnostic
+# supposent néanmoins que stdout/stderr existent.
+if sys.stdout is None:
+    sys.stdout = open(os.devnull, "w", encoding="utf-8")
+if sys.stderr is None:
+    sys.stderr = open(os.devnull, "w", encoding="utf-8")
+
 from datetime import datetime
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -55,10 +64,10 @@ import numpy as np
 from PIL import Image, ImageEnhance, ImageFilter, ImageOps, ImageTk
 
 
-APP_TITLE = "Castle HeightMap Studio v4.3.1"
+APP_TITLE = "Castle HeightMap Studio v4.3.2"
 
 APP_NAME = "Castle HeightMap Studio"
-APP_VERSION = "4.3.1"
+APP_VERSION = "4.3.2"
 APP_AUTHOR = "Valentin Bonali"
 
 
@@ -3232,11 +3241,10 @@ Les licences de ces composants restent celles de leurs projets respectifs.
 def run_self_test() -> int:
     """
     Test non graphique utilisé par GitHub Actions sur le vrai binaire final.
-    Il vérifie les points qui nous ont déjà posé problème :
-    - log inscriptible ;
-    - ressources embarquées ;
-    - Pillow / NumPy ;
-    - CadQuery / OpenCascade importables.
+
+    Sous Windows, l'EXE est construit avec --windowed : il n'a donc pas de
+    console. Le rapport est également écrit dans CHMS_SELF_TEST_REPORT quand
+    cette variable d'environnement est définie.
     """
     checks = []
 
@@ -3256,7 +3264,6 @@ def run_self_test() -> int:
 
     try:
         import cadquery as cq
-        # Faire une vraie petite opération OCC, pas seulement un import.
         solid = cq.Workplane("XY").box(2, 2, 2).val()
         checks.append(("cadquery/OCC", bool(solid.isValid()), "box 2x2x2"))
     except Exception as exc:
@@ -3269,12 +3276,39 @@ def run_self_test() -> int:
     except Exception as exc:
         checks.append(("numpy/pillow", False, repr(exc)))
 
-    failed = False
-    print(f"{APP_NAME} {APP_VERSION} — self-test")
-    print(f"Platform: {platform.system()} {platform.machine()}")
+    failed = any(not ok for _name, ok, _detail in checks)
+
+    lines = [
+        f"{APP_NAME} {APP_VERSION} — self-test",
+        f"Platform: {platform.system()} {platform.machine()}",
+    ]
     for name, ok, detail in checks:
-        print(f"[{'OK' if ok else 'FAIL'}] {name}: {detail}")
-        failed = failed or not ok
+        lines.append(f"[{'OK' if ok else 'FAIL'}] {name}: {detail}")
+
+    report = "\n".join(lines) + "\n"
+
+    # Console disponible : affichage classique.
+    try:
+        if sys.stdout is not None:
+            sys.stdout.write(report)
+            sys.stdout.flush()
+    except Exception:
+        pass
+
+    # CI / build packagé : rapport explicite dans un fichier.
+    report_path = os.environ.get("CHMS_SELF_TEST_REPORT", "").strip()
+    if report_path:
+        try:
+            rp = Path(report_path)
+            rp.parent.mkdir(parents=True, exist_ok=True)
+            rp.write_text(report, encoding="utf-8")
+        except Exception as exc:
+            # Le rapport ne doit pas modifier le résultat des vérifications
+            # fonctionnelles, mais on laisse une trace dans le log.
+            try:
+                APP_LOG.warning(f"Impossible d'écrire le rapport self-test : {exc}")
+            except Exception:
+                pass
 
     return 1 if failed else 0
 

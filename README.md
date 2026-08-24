@@ -1,4 +1,4 @@
-# Castle HeightMap Studio v4.3.1
+# Castle HeightMap Studio v4.3.2
 
 **Auteur : Valentin Bonali**
 

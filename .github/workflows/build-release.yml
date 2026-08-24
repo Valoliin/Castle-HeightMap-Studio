@@ -42,10 +42,31 @@ jobs:
       - name: Self-test Windows EXE
         shell: pwsh
         run: |
-          & "dist/CastleHeightMapStudio-Windows-x86_64.exe" --self-test
-          if ($LASTEXITCODE -ne 0) {
-            throw "Castle HeightMap Studio Windows self-test failed with exit code $LASTEXITCODE"
+          $exe = Resolve-Path "dist/CastleHeightMapStudio-Windows-x86_64.exe"
+          $report = Join-Path $env:RUNNER_TEMP "CastleHeightMapStudio-self-test.txt"
+
+          $env:CHMS_SELF_TEST_REPORT = $report
+
+          $process = Start-Process `
+            -FilePath $exe `
+            -ArgumentList "--self-test" `
+            -Wait `
+            -PassThru
+
+          if (Test-Path $report) {
+            Write-Host "----- Castle HeightMap Studio self-test -----"
+            Get-Content $report
+            Write-Host "---------------------------------------------"
           }
+          else {
+            Write-Warning "Le rapport self-test n'a pas été créé."
+          }
+
+          if ($process.ExitCode -ne 0) {
+            throw "Castle HeightMap Studio Windows self-test failed with exit code $($process.ExitCode)"
+          }
+
+          Write-Host "Windows EXE self-test OK"
 
       - uses: actions/upload-artifact@v4
         with:
@@ -120,7 +141,11 @@ jobs:
       - name: Self-test Linux AppImage
         run: |
           chmod +x CastleHeightMapStudio-Linux-x86_64.AppImage
+          export CHMS_SELF_TEST_REPORT="$RUNNER_TEMP/CastleHeightMapStudio-self-test.txt"
           APPIMAGE_EXTRACT_AND_RUN=1 ./CastleHeightMapStudio-Linux-x86_64.AppImage --self-test
+          echo "----- Castle HeightMap Studio self-test -----"
+          cat "$CHMS_SELF_TEST_REPORT"
+          echo "---------------------------------------------"
 
       - uses: actions/upload-artifact@v4
         with:

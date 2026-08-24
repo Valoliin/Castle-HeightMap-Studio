@@ -1,5 +1,16 @@
 # Changelog — Castle HeightMap Studio
 
+## 4.3.2
+- Correction du self-test de l'EXE Windows construit avec PyInstaller `--windowed`.
+- Compatibilité avec `pythonw.exe` / absence de `stdout` et `stderr`.
+- Le self-test peut désormais écrire son résultat dans `CHMS_SELF_TEST_REPORT`.
+- GitHub Actions lance l'EXE Windows avec `Start-Process -Wait -PassThru`.
+- Le code de retour du véritable EXE est vérifié de manière fiable.
+- Le rapport du self-test Windows est affiché directement dans les logs GitHub Actions.
+- Le self-test AppImage produit le même type de rapport pour faciliter le diagnostic.
+- L'application reste une vraie application graphique Windows : aucune console n'apparaît au lancement normal.
+
+
 ## 4.3.1
 - Correction du démarrage de l'AppImage sur système de fichiers en lecture seule.
 - Les logs ne sont plus écrits à côté de l'exécutable.
