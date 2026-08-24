@@ -1,5 +1,14 @@
 # Changelog — Castle HeightMap Studio
 
+## 4.4.3
+- Correction du bouton **Ouvrir l'exemple CDR**.
+- Le vrai fichier projet `CDR.castlehm` est maintenant inclus dans `examples/`.
+- L'exemple utilisé par l'application est `examples/cdr_castle_wall_example.castlehm`.
+- Une copie `examples/CDR.castlehm` reste visible dans le dépôt.
+- Ajout d'un message d'erreur clair si le projet exemple est absent ou corrompu.
+- Le bouton ne provoque plus d'échec silencieux si l'exemple manque dans une build.
+
+
 ## 4.4.2
 - Intégration de vraies captures d’écran du projet dans le README GitHub.
 - Ajout de captures dans l’écran de bienvenue : vue de l’éditeur et vue FreeCAD.

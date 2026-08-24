@@ -64,10 +64,10 @@ import numpy as np
 from PIL import Image, ImageEnhance, ImageFilter, ImageOps, ImageTk
 
 
-APP_TITLE = "Castle HeightMap Studio v4.4.2"
+APP_TITLE = "Castle HeightMap Studio v4.4.3"
 
 APP_NAME = "Castle HeightMap Studio"
-APP_VERSION = "4.4.2"
+APP_VERSION = "4.4.3"
 APP_AUTHOR = "Valentin Bonali"
 
 
@@ -3333,11 +3333,29 @@ Les licences de ces composants restent celles de leurs projets respectifs.
     def load_example_project(self, mark_initialized: bool = False):
         example = resource_path("examples/cdr_castle_wall_example.castlehm")
         if not example.exists():
-            raise FileNotFoundError(f"Exemple introuvable : {example}")
-        self._open_project_from_path(example, as_template=True)
+            APP_LOG.error(f"Projet exemple CDR introuvable : {example}")
+            messagebox.showerror(
+                APP_TITLE,
+                "Le projet exemple CDR est absent de cette installation.\n\n"
+                f"Fichier attendu :\n{example}"
+            )
+            return False
+
+        try:
+            self._open_project_from_path(example, as_template=True)
+        except Exception as exc:
+            APP_LOG.error(f"Impossible d'ouvrir l'exemple CDR : {exc}")
+            messagebox.showerror(
+                APP_TITLE,
+                f"Impossible d'ouvrir le projet exemple CDR :\n\n{exc}"
+            )
+            return False
+
         if mark_initialized:
             self.app_state["startup_initialized"] = True
             save_app_state(self.app_state)
+
+        return True
 
     def open_project(self):
         path = filedialog.askopenfilename(title="Ouvrir un projet", filetypes=[("Castle HeightMap Project", "*.castlehm")])

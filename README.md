@@ -2,7 +2,7 @@
 
 **Éditeur de textures et de height-maps pour générer des reliefs 3D STEP utilisables directement dans FreeCAD.**
 
-**Version 4.4.2 · Auteur : Valentin Bonali · Windows / Linux · Licence MIT**
+**Version 4.4.3 · Auteur : Valentin Bonali · Windows / Linux · Licence MIT**
 
 Castle HeightMap Studio permet de partir d'une simple image — mur en pierre, briques, gravure, motif décoratif — pour construire une façade texturée aux dimensions réelles, prévisualiser son relief puis l'exporter sous forme de **solide STEP**.
 
@@ -61,10 +61,16 @@ Même si le projet vient de la robotique, l'outil est volontairement général :
 
 ## Exemple CDR inclus
 
-Un projet d'exemple est fourni dans :
+Un vrai projet `.castlehm` d'exemple est fourni dans :
 
 ```text
 examples/cdr_castle_wall_example.castlehm
+```
+
+Une copie portant le nom original est également présente :
+
+```text
+examples/CDR.castlehm
 ```
 
 Au **premier lancement**, Castle HeightMap Studio charge automatiquement cet exemple et affiche un écran d'accueil expliquant le workflow.
