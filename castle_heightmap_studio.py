@@ -64,10 +64,10 @@ import numpy as np
 from PIL import Image, ImageEnhance, ImageFilter, ImageOps, ImageTk
 
 
-APP_TITLE = "Castle HeightMap Studio v4.3.2"
+APP_TITLE = "Castle HeightMap Studio v4.3.3"
 
 APP_NAME = "Castle HeightMap Studio"
-APP_VERSION = "4.3.2"
+APP_VERSION = "4.3.3"
 APP_AUTHOR = "Valentin Bonali"
 
 

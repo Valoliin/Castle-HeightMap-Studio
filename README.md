@@ -1,4 +1,4 @@
-# Castle HeightMap Studio v4.3.2
+# Castle HeightMap Studio v4.3.3
 
 **Auteur : Valentin Bonali**
 
@@ -170,3 +170,19 @@ CastleHeightMapStudio --self-test
 ```
 
 GitHub Actions exécute ce test sur les artefacts finaux avant de les publier.
+
+
+## Packaging CadQuery / CasADi
+
+CadQuery dépend notamment de CasADi. Sous Windows, CasADi contient un module
+SWIG natif (`casadi._casadi`) et de nombreuses DLL.
+
+Le build inclut donc :
+- `--collect-all casadi`
+- `--hidden-import casadi._casadi`
+- un hook PyInstaller dédié ;
+- un runtime hook Windows qui ajoute le dossier CasADi au chemin de recherche
+  des DLL.
+
+Le self-test de release effectue ensuite une vraie création de solide CadQuery
+pour vérifier que la pile CadQuery/OpenCascade/CasADi est fonctionnelle.

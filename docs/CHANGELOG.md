@@ -1,5 +1,18 @@
 # Changelog — Castle HeightMap Studio
 
+## 4.3.3
+- Correction du packaging Windows de CasADi utilisé indirectement par CadQuery.
+- Ajout d'un hook PyInstaller `hook-casadi.py`.
+- Collecte explicite de tous les sous-modules, données, DLL et plugins CasADi.
+- Ajout des imports cachés `casadi._casadi` et `_casadi`.
+- Ajout d'un runtime hook Windows pour le chemin de recherche des DLL.
+- Le dossier CasADi extrait par PyInstaller est ajouté avec `os.add_dll_directory()`.
+- Le même dossier est ajouté au `PATH` pour le chargeur de plugins CasADi.
+- Vérification de `casadi._casadi` dans l'environnement Windows avant compilation.
+- Le self-test final de l'EXE continue de réaliser une vraie opération CadQuery/OpenCascade.
+- La stratégie CasADi est également appliquée au build AppImage pour garder les deux plateformes cohérentes.
+
+
 ## 4.3.2
 - Correction du self-test de l'EXE Windows construit avec PyInstaller `--windowed`.
 - Compatibilité avec `pythonw.exe` / absence de `stdout` et `stderr`.

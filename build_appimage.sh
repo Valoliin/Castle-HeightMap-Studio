@@ -25,7 +25,12 @@ python -m PyInstaller \
     --noconfirm \
     --collect-all cadquery \
     --collect-all OCP \
+    --collect-all casadi \
+    --hidden-import casadi._casadi \
+    --hidden-import _casadi \
     --collect-all matplotlib \
+    --additional-hooks-dir "build_tools/pyinstaller_hooks" \
+    --runtime-hook "build_tools/rthook_casadi.py" \
     --add-data "docs:docs" \
     --add-data "assets:assets" \
     --add-data "examples:examples" \
